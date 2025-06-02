@@ -1,0 +1,49 @@
+{
+    "cayden": {
+        "joined_date": "2025-05-09",
+        "cart": {
+            "tomato": {
+                "price": 2.0,
+                "quantity": 10
+            },
+            "bananas": {
+                "price": 4.0,
+                "quantity": 5
+            }
+        }
+    },
+    "milk": {
+        "joined_date": "2025-05-12",
+        "cart": {
+            "milk": {
+                "price": 7.0,
+                "quantity": 100
+            }
+        }
+    },
+    "albert": {
+        "joined_date": "2025-05-14",
+        "cart": {
+            "Apples": {
+                "price": 3.0,
+                "quantity": 16
+            },
+            "cereal 1": {
+                "price": 5.0,
+                "quantity": 2
+            }
+        }
+    },
+    "hi hi": {
+        "joined_date": "2025-05-14",
+        "cart": {}
+    },
+    "hello 123": {
+        "joined_date": "2025-05-15",
+        "cart": {}
+    },
+    "no": {
+        "joined_date": "2025-05-15",
+        "cart": {}
+    }
+}
