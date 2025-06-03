@@ -3,8 +3,8 @@
         "joined_date": "2025-05-09",
         "cart": {
             "tomato": {
-                "price": 2.0,
-                "quantity": 10
+                "price": 1.5,
+                "quantity": 17
             },
             "bananas": {
                 "price": 4.0,
