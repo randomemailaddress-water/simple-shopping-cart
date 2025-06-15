@@ -42,3 +42,18 @@ class ShoppingCart:
     def get_items(self):
         """Get all items in the cart."""
         return self.items
+    
+    def remove_quantity(self, item_name, quantity_to_remove):
+        """Remove specific quantity of an item from cart."""
+        if item_name in self.items:
+            current_qty = self.items[item_name]["quantity"]
+            new_qty = current_qty - quantity_to_remove
+            
+            # If new quantity would be 0 or less, remove the whole item
+            if new_qty <= 0:
+                return self.remove_item(item_name)
+            
+            # Update quantity in temporary cart
+            self.items[item_name]["quantity"] = new_qty
+            return True
+        return False

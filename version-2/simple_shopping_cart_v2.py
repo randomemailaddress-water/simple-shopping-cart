@@ -236,22 +236,73 @@ class ShoppingCartGUI:
         # If there's only one item, ask directly if user wants to remove it
         if len(items) == 1:
             item = items[0]
-            # Asks the user if they want to remove item from the cart, which continues if returned as True. I should probably add a feature where it allows the user to just remove a specific quantity.
-            if eg.ynbox(f"Do you want to remove {item}?", "Remove Item"):
+            current_qty = self.cart.get_items()[item]["quantity"]
+            
+            msg = f"Current quantity of {item}: {current_qty}\n\nWhat would you like to do?"
+            choice = eg.buttonbox(msg, "Remove Item", 
+                                choices=["Remove All", "Remove Some", "Cancel"])
+            
+            if choice == "Remove All":
                 # Removes item from cart and database.
                 self.cart.remove_item(item)
-                self.db.update_cart(self.current_user, self.cart.get_items()) # This takes the temporary cart from self.cart.items and updates the database with it.
+                self.db.update_cart(self.current_user, self.cart.get_items())
                 eg.msgbox(f"{item} removed from cart", "Success")
-            return
+                return
             
+            elif choice == "Remove Some":
+                qty = eg.enterbox(f"How many {item}s do you want to remove? (1-{current_qty})")
+                if qty:
+                    try:
+                        qty = int(qty)
+                        if 0 < qty <= current_qty:
+                            self.cart.remove_quantity(item, qty)
+                            # Update database with modified cart
+                            self.db.update_cart(self.current_user, self.cart.get_items())
+                            eg.msgbox(f"Removed {qty} {item}(s) from cart", "Success")
+                            return
+                        
+                        else:
+                            eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
+                            return
+                        
+                    except ValueError:
+                        eg.msgbox("Please enter a valid number", "Error")
+                        return
+                        
         # If there are multiple items, show choice box to select item to remove
         choice = eg.choicebox("Select an item to remove from your cart:", "Remove Item", items)
-        if choice and eg.ynbox(f"Are you sure you want to remove {choice}?", "Confirm"): # Once again, I should add an option to just remove a specific quantity, but I will add that in my next version.
-            # If this choice is returned True, continues to remove the item from the cart and database.
-            self.cart.remove_item(choice) # Removes the choice from self.items.
-            self.db.update_cart(self.current_user, self.cart.get_items()) # Like the previous section, this takes the temporary cart from self.cart.items and updates the database with it.
-            eg.msgbox(f"{choice} removed from cart", "Success")
+        if choice:
+            current_qty = self.cart.get_items()[choice]["quantity"]
+            msg = f"Current quantity of {choice}: {current_qty}\n\nWhat would you like to do?"
+            action = eg.buttonbox(msg, "Remove Item", 
+                                choices=["Remove All", "Remove Some", "Cancel"])
             
+            if action == "Remove All":
+                # Removes the choice from self.items.
+                self.cart.remove_item(choice)
+                # Like the previous section, this takes the temporary cart from self.cart.items and updates the database with it.
+                self.db.update_cart(self.current_user, self.cart.get_items())
+                eg.msgbox(f"{choice} removed from cart", "Success")
+                return
+            
+            elif action == "Remove Some":
+                qty = eg.enterbox(f"How many {choice}s do you want to remove? (1-{current_qty})")
+                if qty:
+                    try:
+                        qty = int(qty)
+                        if 0 < qty <= current_qty:
+                            self.cart.remove_quantity(choice, qty)
+                            self.db.update_cart(self.current_user, self.cart.get_items())
+                            eg.msgbox(f"Removed {qty} {choice}(s) from cart", "Success")
+                            return
+                        
+                        else:
+                            eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
+                            return
+                        
+                    except ValueError:
+                        eg.msgbox("Please enter a valid number", "Error")
+
     def _view_cart(self):
         """View cart contents and total."""
         if self.cart.is_empty():
