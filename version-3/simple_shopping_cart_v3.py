@@ -402,7 +402,8 @@ class ShoppingCartGUI:
         cart_items = self.cart.get_items()
         total = self.cart.get_total()
         discount = 0
-        
+        final_amount = total
+
         # Apply discount if eligible
         if total >= DISCOUNT_THRESHOLD:
             discount = (total * DISCOUNT_PERCENTAGE) / 100
