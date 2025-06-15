@@ -1,4 +1,4 @@
-# Simple shopping cart program version 2 This file is used more for the GUI, while the other for the actual functions of the code.
+# Simple shopping cart program version 2. This file is the main program that runs the shopping cart system along with the GUI, while the other shopping_cart.py file is more for the barebones of this code, if that makes sense.
 
 # Importing modules
 import os
@@ -89,12 +89,13 @@ class ShoppingCartGUI:
             
             # I should probably return the user to the same page instead of the main menu, but i'll fix that in my next version.
             # I could use elif, but it wouldn't make much difference as we can only show one error at a time, which I also plan to fix in my next version.
-            if not username:
-                eg.msgbox("Username cannot be blank.", "Error")
+            
+            if not username or len(username.strip()) == 0:
+                eg.msgbox("Username cannot be empty or just spaces.", "Error")
                 return
-                
-            if ' ' in username:
-                eg.msgbox("Username cannot contain spaces.", "Error")
+        
+            if not username.isalnum():
+                eg.msgbox("Username can only contain letters and numbers.", "Error")
                 return
                 
             if len(username) > MAX_USERNAME_LENGTH:
@@ -145,8 +146,8 @@ class ShoppingCartGUI:
                 self._clear_cart()
             elif choice == "Logout":
                 if eg.ynbox("Are you sure you want to logout?", "Logout"):
-                    self.current_user = None
-                    self.cart = None
+                    self.current_user = None # Sets the currents user and cart to none for this session, so another user can log back in straight away. This works because once the current user is set to None, the program will return to the authentication menu because of the while loop in the _start() function.
+                    self.cart = None # Closes the ShoppingCart instance, so a new user can create a new instance with their own cart.
                     return
                 
     def _add_item(self):
