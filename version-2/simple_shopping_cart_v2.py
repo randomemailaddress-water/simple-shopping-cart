@@ -46,7 +46,7 @@ class ShoppingCartGUI:
         attempts = 0
         while attempts < MAX_LOGIN_ATTEMPTS:
             fields = ["Username", "Password"]
-            values = eg.multenterbox(
+            values = eg.multpasswordbox(
                 f"Enter your login details:\n\nAttempts remaining: {MAX_LOGIN_ATTEMPTS - attempts}",
                 "Login", 
                 fields
@@ -79,51 +79,59 @@ class ShoppingCartGUI:
                          "Login Failed")
 
     def _register(self):
-        """Handle user registration."""
-        fields = ["Username", "Password", "Confirm Password"]
-        values = eg.multenterbox("Enter your registration details:", "Register", fields)
+        """Handle user registration with proper password hiding."""
+        # First get username
+        username = eg.enterbox("Enter username:", "Register")
+        if not username:
+            return
+            
+        username = username.strip().lower()
         
-        if values:
-            username, password, confirm = values
-            username = username.strip().lower()
-            
-            # I should probably return the user to the same page instead of the main menu, but i'll fix that in my next version.
-            # I could use elif, but it wouldn't make much difference as we can only show one error at a time, which I also plan to fix in my next version.
-            
-            if not username or len(username.strip()) == 0:
-                eg.msgbox("Username cannot be empty or just spaces.", "Error")
-                return
+        # Username validation
+        if not username or len(username.strip()) == 0:
+            eg.msgbox("Username cannot be empty or just spaces.", "Error")
+            return
         
-            if not username.isalnum():
-                eg.msgbox("Username can only contain letters and numbers.", "Error")
-                return
-                
-            if len(username) > MAX_USERNAME_LENGTH:
-                eg.msgbox(f"Username must be {MAX_USERNAME_LENGTH} characters or less.", "Error")
-                return
-                
-            if password != confirm:
-                eg.msgbox("Passwords do not match.", "Error")
-                return
-                
-            if len(password) < MIN_PASSWORD_LENGTH:
-                eg.msgbox(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "Error")
-                return
+        if not username.isalnum():
+            eg.msgbox("Username can only contain letters and numbers.", "Error")
+            return
             
-            if self.db.get_user(username): # If function returns something
-                eg.msgbox("Username already exists.", "Error")
-                return
+        if len(username) > MAX_USERNAME_LENGTH:
+            eg.msgbox(f"Username must be {MAX_USERNAME_LENGTH} characters or less.", "Error")
+            return
             
-            # Hashing the password using bcrypt
-            hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-            if self.db.add_user(username, hashed):
-                # If user and password is successfully added, sets the current user to the inputted username, and the current cart to
-                self.current_user = username
-                self.cart = ShoppingCart()
-                eg.msgbox("Registration successful!", "Success")
-                # After registration, it shows the main menu as the current user is now logged in.
-            else:
-                eg.msgbox("Registration failed. Please try again.", "Error")
+        if self.db.get_user(username): # If function returns something
+            eg.msgbox("Username already exists.", "Error")
+            return
+        
+        # Then get passwords separately with the passwordbox function that hides the password
+        password = eg.passwordbox("Enter password:", "Register")
+        if not password:
+            return
+            
+        confirm = eg.passwordbox("Confirm password:", "Register")
+        if not confirm:
+            return
+        
+        # Password validation
+        if password != confirm:
+            eg.msgbox("Passwords do not match.", "Error")
+            return
+            
+        if len(password) < MIN_PASSWORD_LENGTH:
+            eg.msgbox(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "Error")
+            return
+        
+        # Hashing the password using bcrypt
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        if self.db.add_user(username, hashed):
+            # If user and password is successfully added, sets the current user to the inputted username, and the current cart to
+            self.current_user = username
+            self.cart = ShoppingCart()
+            eg.msgbox("Registration successful!", "Success")
+            # After registration, it shows the main menu as the current user is now logged in.
+        else:
+            eg.msgbox("Registration failed. Please try again.", "Error")
 
     def _show_main_menu(self):
         """Show the main menu for the shopping cart functions."""
