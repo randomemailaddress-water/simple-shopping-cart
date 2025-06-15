@@ -1,4 +1,4 @@
-# Simple shopping cart program V2. You are meant to run the other file name simple_shopping_cart_v2.py to run the program. This file is imported into that file, where it uses functions from here. This file is more for the barebones of the code while the other for the GUI and other features.
+# Simple shopping cart program V3. You are meant to run the other file name simple_shopping_cart_v3.py to run the program. This file is imported into that file, where it uses functions from here. This file is more for the barebones of the code while the other for the GUI and other features.
 
 class ShoppingCart:
     def __init__(self):

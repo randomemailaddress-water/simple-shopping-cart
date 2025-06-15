@@ -1,4 +1,4 @@
-# Simple shopping cart program version 2. This file is the main program that runs the shopping cart system along with the GUI, while the other shopping_cart.py file is more for the barebones of this code, if that makes sense.
+# Simple shopping cart program version 3. This file is the main program that runs the shopping cart system along with the GUI, while the other shopping_cart.py file is more for the barebones of this code, if that makes sense.
 
 # Importing modules
 import os
@@ -13,7 +13,7 @@ from config import*
 
 class ShoppingCartGUI:
     def __init__(self):
-        """Initialize the shopping cart database, cart and user for this session."""
+        """Initialize the shopping cart database, cart and user for this session.""" # I use docstrings to describe what each function does, while I use comments to describe what a line of code does.
         self.db = Database(DB_FILE) # Initializes the database connection using the variable from config.py and the class in database.py.
         self.cart = None
         self.current_user = None
@@ -27,7 +27,7 @@ class ShoppingCartGUI:
 
     def start(self):
         """Start the shopping cart program."""
-        eg.msgbox("Welcome to the Simple Shopping Cart System V2", "Shopping Cart")
+        eg.msgbox("Welcome to the Simple Shopping Cart System V3", "Shopping Cart")
         while True: # This while loop keeps on running until the user chooses to exit.
             if not self.current_user: # If no user is logged in, show authentication menu
                 self._show_auth_menu()
@@ -143,7 +143,7 @@ class ShoppingCartGUI:
                 # If user and password is successfully added, sets the current user to the inputted username, and the current cart to
                 self.current_user = username
                 self.cart = ShoppingCart()
-                eg.msgbox("Registration successful!", "Success")
+                eg.msgbox("Registration successful.", "Success")
                 # After registration, it shows the main menu as the current user is now logged in.
                 break
             else:
@@ -154,7 +154,7 @@ class ShoppingCartGUI:
     def _show_main_menu(self):
         """Show the main menu for the shopping cart functions."""
         while True:
-            choices = ["Add Item", "Remove Item", "View Cart", "Clear Cart", "Logout"]
+            choices = ["Add Item", "Remove Item", "View Cart", "Checkout", "View Order History", "Clear Cart", "Logout"]
             choice = eg.buttonbox(
                 "Select an option:",
                 "Shopping Cart",
@@ -168,6 +168,10 @@ class ShoppingCartGUI:
                 self._remove_item()
             elif choice == "View Cart":
                 self._view_cart()
+            elif choice == "Checkout":
+                self._checkout()
+            elif choice == "View Order History":
+                self._view_order_history()
             elif choice == "Clear Cart":
                 self._clear_cart()
             elif choice == "Logout":
@@ -371,6 +375,101 @@ class ShoppingCartGUI:
             self.db.update_cart(self.current_user, self.cart.get_items()) # Updates the database with the new temporary cart, which is now empty.
             eg.msgbox("Cart cleared successfully", "Success")
             return
+
+    def _checkout(self):
+        """Process cart checkout."""
+        if self.cart.is_empty():
+            eg.msgbox("Cart is empty. Nothing to checkout.", "Error")
+            return
+            
+        # Get budget from user
+        while True:
+            budget = eg.enterbox("Enter your budget ($):", "Budget")
+            if budget is None:
+                return
+                
+            try:
+                budget = float(budget)
+                if budget <= 0:
+                    eg.msgbox("Budget must be greater than 0.", "Error")
+                    continue
+                break
+            except ValueError:
+                eg.msgbox("Please enter a valid number for budget.", "Error")
+                continue
+            
+        # Calculate totals and discount
+        cart_items = self.cart.get_items()
+        total = self.cart.get_total()
+        discount = 0
+        
+        # Apply discount if eligible
+        if total >= DISCOUNT_THRESHOLD:
+            discount = (total * DISCOUNT_PERCENTAGE) / 100
+            final_amount = total - discount
+        
+        # Show order summary
+        text = "=== Order Summary ===\n\n"
+        for item, details in cart_items.items():
+            subtotal = details["price"] * details["quantity"]
+            text += f"{item}: ${details['price']:.2f} x {details['quantity']} = ${subtotal:.2f}\n"
+        
+        text += f"\nSubtotal: ${total:.2f}"
+        if discount > 0:
+            text += f"\nDiscount ({DISCOUNT_PERCENTAGE}%): -${discount:.2f}"
+        text += f"\nFinal Total: ${final_amount:.2f}"
+        text += f"\nYour Budget: ${budget:.2f}"
+        
+        # Warn if user is over budget
+        if final_amount > budget:
+            over_amount = final_amount - budget
+            if not eg.ynbox(
+                f"Warning: Order is ${over_amount:.2f} over your budget\n\n{text}\n\nProceed anyway?",
+                "Budget Warning"
+            ):
+                return
+        
+        # Confirm checkout
+        if eg.ynbox(f"{text}\n\nProceed with checkout?", "Confirm Checkout"):
+            # Save order with all details in the parameters
+            self.db.save_order(
+                self.current_user,
+                cart_items,
+                total,
+                final_amount,
+                budget,
+                discount
+            )
+            # Clear cart since user purchased all the items in the cart
+            self.cart.clear()
+            self.db.update_cart(self.current_user, self.cart.get_items()) # Updates the cart in the database with the now clear cart.
+            eg.msgbox("Checkout successful. Thank you for your order.", "Success")
+            return
+
+    def _view_order_history(self):
+        """Show user's order history."""
+        orders = self.db.get_order_history(self.current_user)
+        if not orders:
+            eg.msgbox("No order history found.", "Order History")
+            return
+            
+        text = "=== Order History ===\n\n"
+        for order in orders:
+            text += f"Date: {order['date']}\n"
+            text += "\nItems:\n"
+            for item in order['items']:
+                name, price, qty = item
+                subtotal = price * qty
+                text += f"  {name}: ${price:.2f} x {qty} = ${subtotal:.2f}\n"
+            
+            text += f"\nSubtotal: ${order['total']:.2f}"
+            if order['discount'] > 0:
+                text += f"\nDiscount Applied: ${order['discount']:.2f}"
+            text += f"\nFinal Amount: ${order['final_amount']:.2f}"
+            text += f"\nBudget: ${order['budget']:.2f}"
+            text += f"\n{'=' * 40}\n\n"
+        
+        eg.textbox("Order History", "History", text)
 
 def main():
     app = ShoppingCartGUI()
