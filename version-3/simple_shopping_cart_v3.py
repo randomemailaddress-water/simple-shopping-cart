@@ -435,7 +435,7 @@ class ShoppingCartGUI:
         if final_amount > budget:
             over_amount = final_amount - budget
             if not eg.ynbox(
-                f"Warning: Order is ${over_amount:.2f} over your budget\n\n{text}\n\nProceed anyway?",
+                f"⚠️ WARNING ⚠️: Order exceeds your budget by ${over_amount:.2f}\n\n{text}\n\nDo you still want to proceed anyway?",
                 "Budget Warning"
             ):
                 return
