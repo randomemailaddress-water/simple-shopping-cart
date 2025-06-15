@@ -60,7 +60,7 @@ class ShoppingCartGUI:
                 fields
             )
             
-            if not values:  # User clicked Cancel
+            if values is None: # User clicked Cancel
                 return
                 
             username, password = values # Unpacking values.
@@ -88,58 +88,68 @@ class ShoppingCartGUI:
 
     def _register(self):
         """Handle user registration with proper password hiding."""
-        # First get username
-        username = eg.enterbox("Enter username:", "Register")
-        if not username:
-            return
+        while True:
+            # First get username
+            username = eg.enterbox("Enter username:", "Register")
+            if username is None:
+                return
+
+            username = username.strip().lower()
             
-        username = username.strip().lower()
-        
-        # Username validation
-        if not username or len(username.strip()) == 0:
-            eg.msgbox("Username cannot be empty or just spaces.", "Error")
-            return
-        
-        if not username.isalnum():
-            eg.msgbox("Username can only contain letters and numbers.", "Error")
-            return
+            # Username validation
+            if not username or len(username.strip()) == 0:
+                eg.msgbox("Username cannot be empty or just spaces.", "Error")
+                continue
             
-        if len(username) > MAX_USERNAME_LENGTH:
-            eg.msgbox(f"Username must be {MAX_USERNAME_LENGTH} characters or less.", "Error")
-            return
+            if not username.isalnum():
+                eg.msgbox("Username can only contain letters and numbers.", "Error")
+                continue
+                
+            if len(username) > MAX_USERNAME_LENGTH:
+                eg.msgbox(f"Username must be {MAX_USERNAME_LENGTH} characters or less.", "Error")
+                continue
+                
+            if self.db.get_user(username): # If function returns something
+                eg.msgbox("Username already exists.", "Error")
+                continue
+
+            break
             
-        if self.db.get_user(username): # If function returns something
-            eg.msgbox("Username already exists.", "Error")
-            return
-        
-        # Then get passwords separately with the passwordbox function that hides the password
-        password = eg.passwordbox("Enter password:", "Register")
-        if not password:
-            return
+        while True:
+            # Then get passwords separately with the passwordbox function that hides the password
+            password = eg.passwordbox("Enter password:", "Register")
+            if password is None:
+                return
+                
+            confirm = eg.passwordbox("Confirm password:", "Register")
+            if confirm is None:
+                return
             
-        confirm = eg.passwordbox("Confirm password:", "Register")
-        if not confirm:
-            return
-        
-        # Password validation
-        if password != confirm:
-            eg.msgbox("Passwords do not match.", "Error")
-            return
+            # Password validation
+            if password != confirm:
+                eg.msgbox("Passwords do not match.", "Error")
+                continue
+                
+            if len(password) < MIN_PASSWORD_LENGTH:
+                eg.msgbox(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "Error")
+                continue
             
-        if len(password) < MIN_PASSWORD_LENGTH:
-            eg.msgbox(f"Password must be at least {MIN_PASSWORD_LENGTH} characters.", "Error")
-            return
+            break
         
-        # Hashing the password using bcrypt
-        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        if self.db.add_user(username, hashed):
-            # If user and password is successfully added, sets the current user to the inputted username, and the current cart to
-            self.current_user = username
-            self.cart = ShoppingCart()
-            eg.msgbox("Registration successful!", "Success")
-            # After registration, it shows the main menu as the current user is now logged in.
-        else:
-            eg.msgbox("Registration failed. Please try again.", "Error")
+        while True:
+            # Hashing the password using bcrypt
+            hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            if self.db.add_user(username, hashed):
+                # If user and password is successfully added, sets the current user to the inputted username, and the current cart to
+                self.current_user = username
+                self.cart = ShoppingCart()
+                eg.msgbox("Registration successful!", "Success")
+                # After registration, it shows the main menu as the current user is now logged in.
+                break
+            else:
+                eg.msgbox("Registration failed. Please try again.", "Error")
+                break
+        return
 
     def _show_main_menu(self):
         """Show the main menu for the shopping cart functions."""
@@ -169,68 +179,74 @@ class ShoppingCartGUI:
     def _add_item(self):
         """Add an item to the cart."""
         fields = ["Item Name", "Price ($)", "Quantity"]
-        values = eg.multenterbox("Enter item details:", "Add Item", fields)
-        
-        if values:
-            name, price, quantity = values
-            name = name.strip()
+        while True:
+            values = eg.multenterbox("Enter item details:", "Add Item", fields)
             
-            try:
-                price = float(price)
-                quantity = int(quantity)
+            if values is None:
+                return
+            
+            if values:
+                name, price, quantity = values
+                name = name.strip()
                 
-                # Validating the inputs
-                if not name:
-                    eg.msgbox("Item name cannot be blank.", "Error")
-                    return
-                    # Returns the user to the main menu instead of the same page, which may be annoying, but i will fix this in my next version.
+                try:
+                    price = float(price)
+                    quantity = int(quantity)
                     
-                if len(name) > MAX_ITEM_NAME_LENGTH:
-                    eg.msgbox(f"Item name must be {MAX_ITEM_NAME_LENGTH} characters or less.", "Error")
-                    return
-                    
-                if price <= 0:
-                    eg.msgbox("Price must be greater than $0.", "Error")
-                    return
-                    
-                if price > MAX_PRICE:
-                    eg.msgbox(f"Price cannot exceed ${MAX_PRICE:,.2f}", "Error")
-                    return
-                    
-                if quantity <= 0:
-                    eg.msgbox("Quantity must be greater than 0.", "Error")
-                    return
-                    
-                if quantity > MAX_QUANTITY:
-                    eg.msgbox(f"Quantity cannot exceed {MAX_QUANTITY}", "Error")
-                    return
+                    # Validating the inputs
+                    if not name:
+                        eg.msgbox("Item name cannot be blank.", "Error")
+                        continue
+                        
+                    if len(name) > MAX_ITEM_NAME_LENGTH:
+                        eg.msgbox(f"Item name must be {MAX_ITEM_NAME_LENGTH} characters or less.", "Error")
+                        continue
+                        
+                    if price <= 0:
+                        eg.msgbox("Price must be greater than $0.", "Error")
+                        continue
+                        
+                    if price > MAX_PRICE:
+                        eg.msgbox(f"Price cannot exceed ${MAX_PRICE:,.2f}", "Error")
+                        continue
+                        
+                    if quantity <= 0:
+                        eg.msgbox("Quantity must be greater than 0.", "Error")
+                        continue
+                        
+                    if quantity > MAX_QUANTITY:
+                        eg.msgbox(f"Quantity cannot exceed {MAX_QUANTITY}", "Error")
+                        continue
 
-                # Check if item already exists in cart
-                cart_items = self.cart.get_items()
-                # If item already exists in the cart, it updates the quantity instead of adding a new item.
-                if name in cart_items:
-                    current_quantity = cart_items[name]["quantity"]
-                    # Adds the new quantity to the current quantity in the cart.
-                    new_quantity = current_quantity + quantity
-                    
-                    # If the new quantity exceeds the maximum quantity, shows an error message and returns.
-                    if new_quantity > MAX_QUANTITY:
-                        eg.msgbox(f"Cannot add {quantity} more {name}(s). The total quantity would exceed {MAX_QUANTITY}.", "Error")
+                    # Check if item already exists in cart
+                    cart_items = self.cart.get_items()
+                    # If item already exists in the cart, it updates the quantity instead of adding a new item.
+                    if name in cart_items:
+                        current_quantity = cart_items[name]["quantity"]
+                        # Adds the new quantity to the current quantity in the cart.
+                        new_quantity = current_quantity + quantity
+                        
+                        # If the new quantity exceeds the maximum quantity, shows an error message and returns.
+                        if new_quantity > MAX_QUANTITY:
+                            eg.msgbox(f"Cannot add {quantity} more {name}(s). The total quantity would exceed {MAX_QUANTITY}.", "Error")
+                            continue
+                        
+                        # Updates the quantity of the item in the cart and database. Calls this function from the ShoppingCart class in shopping_cart.py.
+                        self.cart.update_quantity(name, new_quantity)
+                        # Calls the get_items() function from the ShoppingCart class in shopping_cart.py to get the items in the cart, it doesn't call the function get_cart() in database.py.
+                        self.db.update_cart(self.current_user, self.cart.get_items())
+                        eg.msgbox(f"Added {quantity} more {name}(s) to cart.\nNew quantity: {new_quantity}", "Success")
+                        return
+                    # Else it just adds the items to the cart.
+                    else:
+                        self.cart.add_item(name, price, quantity)
+                        self.db.update_cart(self.current_user, self.cart.get_items())
+                        eg.msgbox(f"{quantity} {name}(s) added to cart", "Success")
                         return
                     
-                    # Updates the quantity of the item in the cart and database. Calls this function from the ShoppingCart class in shopping_cart.py.
-                    self.cart.update_quantity(name, new_quantity)
-                    # Calls the get_items() function from the ShoppingCart class in shopping_cart.py to get the items in the cart, it doesn't call the function get_cart() in database.py.
-                    self.db.update_cart(self.current_user, self.cart.get_items())
-                    eg.msgbox(f"Added {quantity} more {name}(s) to cart.\nNew quantity: {new_quantity}", "Success")
-                # Else it just adds the items to the cart.
-                else:
-                    self.cart.add_item(name, price, quantity)
-                    self.db.update_cart(self.current_user, self.cart.get_items())
-                    eg.msgbox(f"{quantity} {name}(s) added to cart", "Success")
-                
-            except ValueError:
-                eg.msgbox("Invalid price or quantity.", "Error")
+                except ValueError:
+                    eg.msgbox("Invalid price or quantity.", "Error")
+                    continue
 
     def _remove_item(self):
         """Remove an item from the cart."""
@@ -250,6 +266,9 @@ class ShoppingCartGUI:
             choice = eg.buttonbox(msg, "Remove Item", 
                                 choices=["Remove All", "Remove Some", "Cancel"])
             
+            if choice is None or choice == "Cancel":
+                return
+            
             if choice == "Remove All":
                 # Removes item from cart and database.
                 self.cart.remove_item(item)
@@ -258,24 +277,29 @@ class ShoppingCartGUI:
                 return
             
             elif choice == "Remove Some":
-                qty = eg.enterbox(f"How many {item}s do you want to remove? (1-{current_qty})")
-                if qty:
-                    try:
-                        qty = int(qty)
-                        if 0 < qty <= current_qty:
-                            self.cart.remove_quantity(item, qty)
-                            # Update database with modified cart
-                            self.db.update_cart(self.current_user, self.cart.get_items())
-                            eg.msgbox(f"Removed {qty} {item}(s) from cart", "Success")
-                            return
-                        
-                        else:
-                            eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
-                            return
-                        
-                    except ValueError:
-                        eg.msgbox("Please enter a valid number", "Error")
+                while True:
+                    qty = eg.enterbox(f"How many {item}s do you want to remove? (1-{current_qty})")
+
+                    if qty is None:
                         return
+                    
+                    if qty:
+                        try:
+                            qty = int(qty)
+                            if 0 < qty <= current_qty:
+                                self.cart.remove_quantity(item, qty)
+                                # Update database with modified cart
+                                self.db.update_cart(self.current_user, self.cart.get_items())
+                                eg.msgbox(f"Removed {qty} {item}(s) from cart", "Success")
+                                return
+                            
+                            else:
+                                eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
+                                continue
+                            
+                        except ValueError:
+                            eg.msgbox("Please enter a valid number", "Error")
+                            continue
                         
         # If there are multiple items, show choice box to select item to remove
         choice = eg.choicebox("Select an item to remove from your cart:", "Remove Item", items)
@@ -285,6 +309,10 @@ class ShoppingCartGUI:
             action = eg.buttonbox(msg, "Remove Item", 
                                 choices=["Remove All", "Remove Some", "Cancel"])
             
+            if choice is None or choice == "Cancel":
+                return
+            
+            # We can put these if statements in functions
             if action == "Remove All":
                 # Removes the choice from self.items.
                 self.cart.remove_item(choice)
@@ -294,22 +322,28 @@ class ShoppingCartGUI:
                 return
             
             elif action == "Remove Some":
-                qty = eg.enterbox(f"How many {choice}s do you want to remove? (1-{current_qty})")
-                if qty:
-                    try:
-                        qty = int(qty)
-                        if 0 < qty <= current_qty:
-                            self.cart.remove_quantity(choice, qty)
-                            self.db.update_cart(self.current_user, self.cart.get_items())
-                            eg.msgbox(f"Removed {qty} {choice}(s) from cart", "Success")
-                            return
-                        
-                        else:
-                            eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
-                            return
-                        
-                    except ValueError:
-                        eg.msgbox("Please enter a valid number", "Error")
+                while True:
+                    qty = eg.enterbox(f"How many {choice}s do you want to remove? (1-{current_qty})")
+                    
+                    if qty is None:
+                        return
+                    
+                    if qty:
+                        try:
+                            qty = int(qty)
+                            if 0 < qty <= current_qty:
+                                self.cart.remove_quantity(choice, qty)
+                                self.db.update_cart(self.current_user, self.cart.get_items())
+                                eg.msgbox(f"Removed {qty} {choice}(s) from cart", "Success")
+                                return
+                            
+                            else:
+                                eg.msgbox(f"Please enter a number between 1 and {current_qty}", "Error")
+                                continue
+                            
+                        except ValueError:
+                            eg.msgbox("Please enter a valid number", "Error")
+                            continue
 
     def _view_cart(self):
         """View cart contents and total."""
@@ -324,6 +358,7 @@ class ShoppingCartGUI:
         
         text += f"\nTotal: ${self.cart.get_total():.2f}"
         eg.textbox("Cart Contents", "View Cart", text)
+        return
 
     def _clear_cart(self):
         """Clear all items from the cart."""
@@ -335,6 +370,7 @@ class ShoppingCartGUI:
             self.cart.clear() # Clears the temporary cart in self.items
             self.db.update_cart(self.current_user, self.cart.get_items()) # Updates the database with the new temporary cart, which is now empty.
             eg.msgbox("Cart cleared successfully", "Success")
+            return
 
 def main():
     app = ShoppingCartGUI()
