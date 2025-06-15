@@ -287,6 +287,11 @@ class ShoppingCartGUI:
                     if qty is None:
                         return
                     
+                    if not qty.strip():
+                        if eg.ynbox("Quantity cannot be empty. Try again?", "Error"):
+                            continue
+                        return
+                    
                     if qty:
                         try:
                             qty = int(qty)
@@ -330,6 +335,11 @@ class ShoppingCartGUI:
                     qty = eg.enterbox(f"How many {choice}s do you want to remove? (1-{current_qty})")
                     
                     if qty is None:
+                        return
+                    
+                    if not qty.strip():
+                        if eg.ynbox("Quantity cannot be empty. Try again?", "Error"):
+                            continue
                         return
                     
                     if qty:
@@ -402,7 +412,8 @@ class ShoppingCartGUI:
         cart_items = self.cart.get_items()
         total = self.cart.get_total()
         discount = 0
-        
+        final_amount = total
+
         # Apply discount if eligible
         if total >= DISCOUNT_THRESHOLD:
             discount = (total * DISCOUNT_PERCENTAGE) / 100
