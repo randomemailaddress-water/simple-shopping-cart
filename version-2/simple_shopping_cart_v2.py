@@ -3,6 +3,7 @@
 # Importing modules
 import os
 import bcrypt
+import atexit
 # I imported easygui as eg instead of doing from easygui import* because I wanted to make it easier to see which functions are from easygui.
 import easygui as eg
 from database import Database
@@ -16,6 +17,13 @@ class ShoppingCartGUI:
         self.db = Database(DB_FILE) # Initializes the database connection using the variable from config.py and the class in database.py.
         self.cart = None
         self.current_user = None
+        # Register cleanup function to run on program exit
+        atexit.register(self._cleanup)
+
+    def _cleanup(self):
+        """Cleanup resources when program exits."""
+        if hasattr(self, 'db') and self.db:
+            self.db.close()
 
     def start(self):
         """Start the shopping cart program."""
